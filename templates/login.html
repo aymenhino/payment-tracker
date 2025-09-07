@@ -1,0 +1,25 @@
+<!doctype html>
+<html>
+<head>
+  <title>Login</title>
+  <style>
+    body { font-family: Arial, sans-serif; background:#111827; display:flex; align-items:center; justify-content:center; height:100vh; }
+    .login-box { background:white; padding:30px; border-radius:10px; box-shadow:0 4px 10px rgba(0,0,0,0.2); width:300px; }
+    input { padding:10px; width:100%; margin:10px 0; border:1px solid #ccc; border-radius:6px; }
+    button { padding:10px; width:100%; background:#2563eb; color:white; border:none; border-radius:6px; cursor:pointer; }
+    button:hover { background:#1d4ed8; }
+    h2 { margin-top:0; text-align:center; }
+    .error { color:red; font-size:14px; text-align:center; }
+  </style>
+</head>
+<body>
+  <div class="login-box">
+    <h2>🔒 Enter Access Code</h2>
+    {% if error %}<p class="error">{{ error }}</p>{% endif %}
+    <form method="post">
+      <input type="password" name="code" placeholder="Access Code" required />
+      <button type="submit">Unlock</button>
+    </form>
+  </div>
+</body>
+</html>

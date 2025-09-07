@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Payment Tracker</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+<body class="light">
+  <header class="topbar">
+    <div class="topbar-inner">
+      <h1>🚧 Payment Tracker</h1>
+      <div class="topbar-actions">
+        <button id="theme-toggle">🌙 Dark Mode</button>
+        <a href="{{ url_for('logout') }}" class="logout-btn">🚪 Logout</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="footer">
+    <p>© {{ year }} Personal Finance Tracker</p>
+  </footer>
+
+  <script>
+    const rootBody = document.body;
+    const btn = document.getElementById("theme-toggle");
+    const saved = localStorage.getItem("theme") || "light";
+    rootBody.classList.add(saved);
+    btn.textContent = saved === "dark" ? "☀️ Light Mode" : "🌙 Dark Mode";
+
+    btn.addEventListener("click", () => {
+      const next = rootBody.classList.contains("dark") ? "light" : "dark";
+      rootBody.classList.remove("light","dark");
+      rootBody.classList.add(next);
+      localStorage.setItem("theme", next);
+      btn.textContent = next === "dark" ? "☀️ Light Mode" : "🌙 Dark Mode";
+    });
+  </script>
+</body>
+</html>
