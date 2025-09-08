@@ -1,21 +1,58 @@
-{% extends "base.html" %}
-{% block content %}
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login | Payment Tracker</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <script>
+    // Dark/Light mode toggle
+    function toggleTheme() {
+      const html = document.documentElement;
+      const theme = html.getAttribute("data-theme");
+      if (theme === "dark") {
+        html.setAttribute("data-theme", "light");
+        localStorage.setItem("theme", "light");
+      } else {
+        html.setAttribute("data-theme", "dark");
+        localStorage.setItem("theme", "dark");
+      }
+    }
 
-<div class="flex justify-center items-center min-h-[60vh]">
-  <div class="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-lg w-full max-w-md">
-    <h2 class="text-2xl font-bold mb-6 text-center text-gray-800 dark:text-gray-100">🔐 Secure Login</h2>
+    window.onload = () => {
+      const saved = localStorage.getItem("theme") || "dark";
+      document.documentElement.setAttribute("data-theme", saved);
+    };
+  </script>
+</head>
+<body class="min-h-screen flex items-center justify-center bg-gradient-to-r from-purple-800 to-indigo-900 text-white transition-colors duration-300">
+  <div class="bg-gray-900 p-8 rounded-2xl shadow-xl w-full max-w-md">
+    <h1 class="text-3xl font-bold mb-6 text-center">💰 Payment Tracker</h1>
+    
+    {% if error %}
+      <p class="bg-red-600 text-white p-3 mb-4 rounded">{{ error }}</p>
+    {% endif %}
+
     <form method="POST" class="space-y-4">
-      <div>
-        <label class="block mb-1">Access Code</label>
-        <input type="password" name="code" required
-               class="w-full px-3 py-2 border rounded-lg bg-gray-50 dark:bg-gray-700">
-      </div>
-      <button type="submit"
-              class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-lg transition">
-        ✅ Enter
+      <input 
+        type="password" 
+        name="code" 
+        placeholder="Enter Access Code"
+        required
+        class="w-full px-4 py-3 rounded-lg bg-gray-800 border border-gray-700 focus:ring-2 focus:ring-purple-500 focus:outline-none"
+      >
+      <button 
+        type="submit"
+        class="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-lg font-semibold transition-colors">
+        Login
       </button>
     </form>
-  </div>
-</div>
 
-{% endblock %}
+    <div class="mt-6 text-center">
+      <button onclick="toggleTheme()" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg">
+        🌙 Toggle Dark/Light
+      </button>
+    </div>
+  </div>
+</body>
+</html>

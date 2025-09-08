@@ -1,55 +1,70 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html lang="en" class="h-full">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Payment Tracker</title>
 
-  <!-- Tailwind CSS -->
+  <!-- Tailwind CDN (no build step) -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
-      darkMode: 'class'
+      theme: {
+        extend: {
+          colors: { brand: { 50:"#eef2ff", 400:"#7c8bff", 500:"#5b6bff", 600:"#4a57e6" } }
+        }
+      }
     }
   </script>
 
-  <!-- Custom Styles -->
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="icon" href="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f4b0.svg" />
 </head>
-<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen flex flex-col">
-
-  <!-- Navbar -->
-  <nav class="bg-gradient-to-r from-blue-600 to-indigo-700 dark:from-gray-800 dark:to-gray-900 shadow-lg">
-    <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
-      <h1 class="text-2xl font-extrabold text-white tracking-wide">💳 Payment Tracker</h1>
-      <div class="flex gap-3">
-        <a href="/" class="px-3 py-2 text-sm font-medium text-white hover:bg-blue-800 rounded">Home</a>
-        <a href="/login" class="px-3 py-2 text-sm font-medium text-white hover:bg-blue-800 rounded">Login</a>
-        <button id="darkToggle" class="px-3 py-2 text-sm bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg">
-          🌙
-        </button>
+<body class="min-h-screen flex flex-col bg-gray-100 text-gray-800 dark:bg-gray-950 dark:text-gray-100">
+  <!-- NAV -->
+  <header class="sticky top-0 z-20 bg-white/70 dark:bg-gray-900/70 backdrop-blur border-b border-gray-200 dark:border-gray-800">
+    <div class="max-w-7xl mx-auto px-5 py-4 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-500 to-fuchsia-500 shadow-md"></div>
+        <span class="font-semibold text-lg">Payment Tracker</span>
       </div>
+      <nav class="flex items-center gap-6">
+        <a class="hover:text-brand-600 dark:hover:text-brand-400" href="{{ url_for('index') }}">Home</a>
+        <a class="hover:text-brand-600 dark:hover:text-brand-400" href="{{ url_for('export_csv') }}">Export CSV</a>
+        <a class="hover:text-brand-600 dark:hover:text-brand-400" href="{{ url_for('logout') }}">Logout</a>
+        <button id="themeBtn" class="px-3 py-1.5 rounded-lg bg-brand-600 text-white shadow hover:bg-brand-500 transition">
+          🌙 Dark
+        </button>
+      </nav>
     </div>
-  </nav>
+  </header>
 
-  <!-- Content -->
-  <main class="flex-grow container mx-auto px-4 py-6">
-    {% block content %}{% endblock %}
+  <!-- CONTENT -->
+  <main class="flex-1 w-full">
+    <div class="max-w-7xl mx-auto px-5 py-8">
+      {% block content %}{% endblock %}
+    </div>
   </main>
 
-  <!-- Footer -->
-  <footer class="bg-gray-200 dark:bg-gray-800 py-4 text-center text-gray-600 dark:text-gray-400 text-sm">
-    <p>© {{ now().year }} Payment Tracker — Built with ❤️</p>
-  </footer>
+  <!-- Toast -->
+  <div id="toast" class="fixed bottom-6 right-6 hidden px-4 py-3 rounded-lg bg-emerald-600 text-white shadow-lg">
+    Saved ✅
+  </div>
 
   <script>
-    const toggle = document.getElementById("darkToggle");
-    toggle.addEventListener("click", () => {
-      document.documentElement.classList.toggle("dark");
-      localStorage.theme = document.documentElement.classList.contains("dark") ? "dark" : "light";
-    });
-    if (localStorage.theme === "dark") {
-      document.documentElement.classList.add("dark");
+    // Theme toggle (persists in localStorage)
+    const body = document.documentElement;
+    const btn  = document.getElementById('themeBtn');
+    function setTheme(mode){ body.classList.toggle('dark', mode==='dark'); localStorage.setItem('theme', mode); btn.textContent = mode==='dark' ? '☀️ Light' : '🌙 Dark'; }
+    setTheme(localStorage.getItem('theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
+    btn.addEventListener('click', ()=> setTheme(body.classList.contains('dark') ? 'light' : 'dark'));
+
+    // Small helper to show a toast
+    window.showToast = function (msg='Saved ✅') {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.remove('hidden','opacity-0');
+      setTimeout(()=>t.classList.add('opacity-0'), 1200);
+      setTimeout(()=>t.classList.add('hidden'), 1700);
     }
   </script>
 </body>

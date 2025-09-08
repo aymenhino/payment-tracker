@@ -1,27 +1,30 @@
-from flask import Flask, render_template, request, redirect, url_for, send_from_directory, Response, session
+from flask import (
+    Flask, render_template, request, redirect,
+    url_for, send_from_directory, Response,
+    session, jsonify
+)
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 from werkzeug.utils import secure_filename
-import os, csv
+import os
 
+# --- Setup ---
 app = Flask(__name__)
-app.secret_key = "super-secret-key"   # ⚠️ change to something long/random
-ACCESS_CODE = "2468"                  # 🔑 set your access code here
+app.secret_key = "super-secret-key"   # ⚠️ Replace with a long, random string
+ACCESS_CODE = "2468"                  # Login code
 
-# --- Config ---
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 DB_PATH = os.path.join(BASE_DIR, "payments.db")
-
-print(">>> Using database at:", DB_PATH)
 
 app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{DB_PATH}"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["UPLOAD_FOLDER"] = os.path.join(BASE_DIR, "uploads")
-app.config["MAX_CONTENT_LENGTH"] = 5 * 1024 * 1024  # 5 MB
+app.config["MAX_CONTENT_LENGTH"] = 5 * 1024 * 1024  # 5 MB max upload
 
 os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 
 db = SQLAlchemy(app)
+
 
 # --- Model ---
 class Payment(db.Model):
@@ -32,14 +35,16 @@ class Payment(db.Model):
     notes = db.Column(db.String(300))
     receipt = db.Column(db.String(200))
 
+
 # --- Auth Middleware ---
 @app.before_request
 def require_login():
-    open_routes = ["login", "static"]
+    open_routes = {"login", "static"}
     if not session.get("authenticated") and request.endpoint not in open_routes:
         return redirect(url_for("login"))
 
-# --- Login ---
+
+# --- Login / Logout ---
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
@@ -47,20 +52,23 @@ def login():
         if code == ACCESS_CODE:
             session["authenticated"] = True
             return redirect(url_for("index"))
-        else:
-            return render_template("login.html", error="❌ Wrong code")
+        return render_template("login.html", error="❌ Wrong code")
     return render_template("login.html")
+
 
 @app.route("/logout")
 def logout():
     session.clear()
     return redirect(url_for("login"))
 
+
 # --- Helpers ---
 def allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in {"png", "jpg", "jpeg", "gif", "pdf"}
 
+
 def save_receipt(file_storage):
+    """Save uploaded file and return safe filename"""
     if not file_storage or not file_storage.filename:
         return None
     if not allowed_file(file_storage.filename):
@@ -70,9 +78,11 @@ def save_receipt(file_storage):
     file_storage.save(os.path.join(app.config["UPLOAD_FOLDER"], filename))
     return filename
 
+
 @app.context_processor
 def inject_year():
     return {"year": datetime.utcnow().year}
+
 
 # --- Routes ---
 @app.route("/")
@@ -89,6 +99,7 @@ def index():
     total = sum(p.amount for p in payments) if payments else 0
     return render_template("index.html", payments=payments, total=total, q=q)
 
+
 @app.route("/add", methods=["POST"])
 def add_payment():
     amount = float(request.form["amount"])
@@ -98,13 +109,17 @@ def add_payment():
 
     filename = None
     file = request.files.get("receipt")
-    if file:
+    if file and file.filename:
         filename = save_receipt(file)
 
     p = Payment(amount=amount, recipient=recipient, date=date, notes=notes, receipt=filename)
     db.session.add(p)
     db.session.commit()
+
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return jsonify(ok=True, id=p.id)
     return redirect(url_for("index"))
+
 
 @app.route("/edit/<int:pid>", methods=["GET", "POST"])
 def edit_payment(pid):
@@ -127,8 +142,11 @@ def edit_payment(pid):
                 p.receipt = new_name
 
         db.session.commit()
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return jsonify(ok=True)
         return redirect(url_for("index"))
     return render_template("edit.html", payment=p)
+
 
 @app.route("/delete/<int:pid>", methods=["POST"])
 def delete_payment(pid):
@@ -140,15 +158,20 @@ def delete_payment(pid):
             pass
     db.session.delete(p)
     db.session.commit()
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return jsonify(ok=True)
     return redirect(url_for("index"))
+
 
 @app.route("/uploads/<filename>")
 def uploaded_file(filename):
     return send_from_directory(app.config["UPLOAD_FOLDER"], filename)
 
+
 @app.route("/export/csv")
 def export_csv():
     payments = Payment.query.order_by(Payment.date.desc(), Payment.id.desc()).all()
+
     def generate():
         yield "Amount,Recipient,Date,Notes,Receipt\n"
         for p in payments:
@@ -160,9 +183,13 @@ def export_csv():
                 p.receipt or ""
             ]
             yield ",".join(row) + "\n"
-    return Response(generate(),
-                    mimetype="text/csv",
-                    headers={"Content-Disposition": "attachment;filename=payments.csv"})
+
+    return Response(
+        generate(),
+        mimetype="text/csv",
+        headers={"Content-Disposition": "attachment;filename=payments.csv"}
+    )
+
 
 # --- Run ---
 if __name__ == "__main__":

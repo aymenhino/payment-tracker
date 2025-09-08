@@ -1,87 +1,110 @@
 {% extends "base.html" %}
 {% block content %}
 
-<!-- Add Payment Card -->
-<div class="bg-white dark:bg-gray-800 rounded-2xl shadow-md p-6 max-w-xl mx-auto">
-  <h2 class="text-xl font-bold mb-4 text-gray-800 dark:text-gray-100">➕ Add New Payment</h2>
-  <form method="POST" enctype="multipart/form-data" class="space-y-4">
-    <div>
-      <label class="block mb-1">Amount (₪)</label>
-      <input type="number" step="0.01" name="amount" required
-             class="w-full px-3 py-2 border rounded-lg bg-gray-50 dark:bg-gray-700">
-    </div>
-    <div>
-      <label class="block mb-1">Recipient</label>
-      <input type="text" name="recipient" required
-             class="w-full px-3 py-2 border rounded-lg bg-gray-50 dark:bg-gray-700">
-    </div>
-    <div>
-      <label class="block mb-1">Date</label>
-      <input type="date" name="date" required
-             class="w-full px-3 py-2 border rounded-lg bg-gray-50 dark:bg-gray-700">
-    </div>
-    <div>
-      <label class="block mb-1">Notes</label>
-      <textarea name="notes" class="w-full px-3 py-2 border rounded-lg bg-gray-50 dark:bg-gray-700"></textarea>
-    </div>
-    <div>
-      <label class="block mb-1">Upload Receipt</label>
-      <input type="file" name="receipt" accept="image/*,application/pdf"
-             class="w-full px-3 py-2 border rounded-lg bg-gray-50 dark:bg-gray-700">
-    </div>
-    <button type="submit"
-            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-lg transition">
-      💾 Save Payment
-    </button>
+<!-- Header row -->
+<div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+  <h1 class="text-2xl font-semibold">💸 Payments</h1>
+
+  <form action="{{ url_for('index') }}" method="get" class="flex items-center gap-2">
+    <input name="q" value="{{ q or '' }}" placeholder="Search..." class="px-3 py-2 rounded-md bg-white/80 dark:bg-gray-900/70 border border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500">
+    <button class="px-4 py-2 rounded-md bg-brand-600 text-white hover:bg-brand-500">Search</button>
   </form>
 </div>
 
-<!-- Payment History -->
-<div class="mt-10">
-  <h2 class="text-xl font-bold mb-4">📜 Payment History</h2>
-  <div class="overflow-x-auto">
-    <table class="w-full border-collapse bg-white dark:bg-gray-800 shadow-md rounded-lg overflow-hidden">
-      <thead class="bg-blue-600 dark:bg-gray-700 text-white">
-        <tr>
-          <th class="px-4 py-2">Date</th>
-          <th class="px-4 py-2">Amount</th>
-          <th class="px-4 py-2">Recipient</th>
-          <th class="px-4 py-2">Notes</th>
-          <th class="px-4 py-2">Receipt</th>
-          <th class="px-4 py-2">Action</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for payment in payments %}
-        <tr class="border-t hover:bg-gray-100 dark:hover:bg-gray-700">
-          <td class="px-4 py-2">{{ payment.date }}</td>
-          <td class="px-4 py-2">₪ {{ "%.2f"|format(payment.amount) }}</td>
-          <td class="px-4 py-2">{{ payment.recipient }}</td>
-          <td class="px-4 py-2">{{ payment.notes }}</td>
-          <td class="px-4 py-2">
-            {% if payment.receipt %}
-              <a href="{{ url_for('uploaded_file', filename=payment.receipt) }}" target="_blank"
-                 class="text-blue-600 hover:underline">📎 View</a>
-            {% else %}
-              —
-            {% endif %}
-          </td>
-          <td class="px-4 py-2">
-            <a href="{{ url_for('edit', id=payment.id) }}" 
-               class="px-2 py-1 bg-yellow-400 hover:bg-yellow-500 rounded-lg">✏️ Edit</a>
-            <a href="{{ url_for('delete', id=payment.id) }}" 
-               class="px-2 py-1 bg-red-500 hover:bg-red-600 text-white rounded-lg"
-               onclick="return confirm('Delete this payment?')">🗑️ Delete</a>
-          </td>
-        </tr>
-        {% else %}
-        <tr>
-          <td colspan="6" class="text-center py-4 text-gray-500">No payments yet.</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-</div>
+<!-- Add form -->
+<section class="mb-8">
+  <div class="rounded-xl bg-white/80 dark:bg-gray-900/70 border border-gray-200 dark:border-gray-800 p-5 shadow-sm">
+    <h2 class="font-medium mb-4">Add Payment</h2>
+    <form id="addForm" action="{{ url_for('add_payment') }}" method="post" enctype="multipart/form-data" class="grid md:grid-cols-2 gap-4">
+      <div>
+        <label class="text-sm opacity-80">Amount</label>
+        <input required step="0.01" min="0" name="amount" type="number" class="w-full mt-1 px-3 py-2 rounded-md bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700">
+      </div>
+      <div>
+        <label class="text-sm opacity-80">Recipient</label>
+        <input required name="recipient" class="w-full mt-1 px-3 py-2 rounded-md bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700">
+      </div>
 
+      <div>
+        <label class="text-sm opacity-80">Date</label>
+        <input required name="date" placeholder="dd/mm/yyyy" onfocus="this.type='date'" class="w-full mt-1 px-3 py-2 rounded-md bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700">
+      </div>
+      <div>
+        <label class="text-sm opacity-80">Notes</label>
+        <input name="notes" class="w-full mt-1 px-3 py-2 rounded-md bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700">
+      </div>
+
+      <div class="md:col-span-2">
+        <label class="text-sm opacity-80">Receipt (image/PDF, optional)</label>
+        <input name="receipt" type="file" class="block mt-1">
+      </div>
+
+      <div class="md:col-span-2 flex items-center gap-3">
+        <button class="px-4 py-2 rounded-md bg-emerald-600 text-white hover:bg-emerald-500">➕ Add Payment</button>
+        <span id="saving" class="hidden text-sm opacity-70">Saving…</span>
+      </div>
+    </form>
+  </div>
+</section>
+
+<!-- List -->
+<section class="space-y-4">
+  {% set total = 0 %}
+  {% for p in payments %}
+    {% set total = total + p.amount %}
+    <div class="rounded-xl bg-white/80 dark:bg-gray-900/70 border border-gray-200 dark:border-gray-800 p-4 shadow-sm flex items-start justify-between gap-4">
+      <div>
+        <div class="text-lg font-semibold">${{ '%.2f'|format(p.amount) }}</div>
+        <div class="opacity-80">{{ p.recipient }}</div>
+        {% if p.notes %}<div class="mt-1 text-sm opacity-70">{{ p.notes }}</div>{% endif %}
+        {% if p.receipt %}
+          <a class="mt-2 inline-block text-sm text-brand-600 dark:text-brand-400 hover:underline" href="{{ url_for('uploaded_file', filename=p.receipt) }}" target="_blank">View receipt</a>
+        {% endif %}
+      </div>
+
+      <div class="text-right min-w-[180px]">
+        <div class="text-sm opacity-70">{{ p.date.isoformat() }}</div>
+        <div class="mt-3 flex justify-end gap-2">
+          <a href="{{ url_for('edit_payment', pid=p.id) }}" class="px-3 py-1.5 rounded-md bg-amber-500 text-white hover:bg-amber-400">✏️ Edit</a>
+          <form class="deleteForm" action="{{ url_for('delete_payment', pid=p.id) }}" method="post" onsubmit="return confirm('Delete this payment?')">
+            <button class="px-3 py-1.5 rounded-md bg-rose-600 text-white hover:bg-rose-500">🗑️ Delete</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  {% else %}
+    <p class="opacity-70">No payments yet.</p>
+  {% endfor %}
+
+  <div class="text-right font-semibold">Total: ${{ '%.2f'|format(total) }}</div>
+</section>
+
+<script>
+  // AJAX add
+  const addForm = document.getElementById('addForm');
+  const saving  = document.getElementById('saving');
+  addForm?.addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    saving.classList.remove('hidden');
+    try{
+      const res = await fetch(addForm.action, {method:'POST', body:new FormData(addForm), headers:{'X-Requested-With':'XMLHttpRequest'}});
+      if(!res.ok) throw new Error('Save failed');
+      showToast('Saved ✅'); addForm.reset();
+      // Keep the date input type="text" placeholder after reset:
+      const date = addForm.querySelector('input[name="date"]'); date.type='text'; date.placeholder='dd/mm/yyyy';
+      location.reload(); // simplest & reliable refresh of list/total
+    }catch(err){ alert(err.message || 'Failed'); }
+    finally{ saving.classList.add('hidden'); }
+  });
+
+  // AJAX delete
+  document.querySelectorAll('.deleteForm').forEach(f=>{
+    f.addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      if(!confirm('Delete this payment?')) return;
+      const res = await fetch(f.action, {method:'POST', headers:{'X-Requested-With':'XMLHttpRequest'}});
+      if(res.ok){ showToast('Deleted 🗑️'); location.reload(); } else { alert('Delete failed'); }
+    });
+  });
+</script>
 {% endblock %}
