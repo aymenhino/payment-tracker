@@ -1,74 +1,87 @@
 {% extends "base.html" %}
 {% block content %}
 
-<!-- Search -->
-<section class="card">
-  <form class="search-bar" method="get" action="{{ url_for('index') }}">
-    <input type="text" name="q" placeholder="Search recipient, date, or notes..." value="{{ q or '' }}" />
-    <button type="submit">🔍 Search</button>
-    <a class="reset-btn" href="{{ url_for('index') }}">Reset</a>
-  </form>
-</section>
-
-<!-- Add Payment -->
-<section class="card">
-  <h2>Add Payment</h2>
-  <form class="form-grid" action="{{ url_for('add_payment') }}" method="post" enctype="multipart/form-data">
-    <input type="number" step="0.01" name="amount" placeholder="Amount (₪)" required />
-    <input type="text" name="recipient" placeholder="Who I Paid" required />
-    <input type="date" name="date" required />
-    <input type="text" name="notes" placeholder="Notes" />
-    <input type="file" name="receipt" accept="image/*,application/pdf" />
-    <button type="submit">➕ Add Payment</button>
-  </form>
-</section>
-
-<!-- Payments -->
-<section class="card">
-  <div class="table-head">
-    <h2>Payments</h2>
-    <div class="table-actions">
-      <span class="total">Total: ₪ {{ '%.2f'|format(total) }}</span>
-      <a class="export-btn" href="{{ url_for('export_csv') }}">📤 Export CSV</a>
+<!-- Add Payment Card -->
+<div class="bg-white dark:bg-gray-800 rounded-2xl shadow-md p-6 max-w-xl mx-auto">
+  <h2 class="text-xl font-bold mb-4 text-gray-800 dark:text-gray-100">➕ Add New Payment</h2>
+  <form method="POST" enctype="multipart/form-data" class="space-y-4">
+    <div>
+      <label class="block mb-1">Amount (₪)</label>
+      <input type="number" step="0.01" name="amount" required
+             class="w-full px-3 py-2 border rounded-lg bg-gray-50 dark:bg-gray-700">
     </div>
-  </div>
-  <div class="table-wrap">
-    <table>
-      <thead>
+    <div>
+      <label class="block mb-1">Recipient</label>
+      <input type="text" name="recipient" required
+             class="w-full px-3 py-2 border rounded-lg bg-gray-50 dark:bg-gray-700">
+    </div>
+    <div>
+      <label class="block mb-1">Date</label>
+      <input type="date" name="date" required
+             class="w-full px-3 py-2 border rounded-lg bg-gray-50 dark:bg-gray-700">
+    </div>
+    <div>
+      <label class="block mb-1">Notes</label>
+      <textarea name="notes" class="w-full px-3 py-2 border rounded-lg bg-gray-50 dark:bg-gray-700"></textarea>
+    </div>
+    <div>
+      <label class="block mb-1">Upload Receipt</label>
+      <input type="file" name="receipt" accept="image/*,application/pdf"
+             class="w-full px-3 py-2 border rounded-lg bg-gray-50 dark:bg-gray-700">
+    </div>
+    <button type="submit"
+            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-lg transition">
+      💾 Save Payment
+    </button>
+  </form>
+</div>
+
+<!-- Payment History -->
+<div class="mt-10">
+  <h2 class="text-xl font-bold mb-4">📜 Payment History</h2>
+  <div class="overflow-x-auto">
+    <table class="w-full border-collapse bg-white dark:bg-gray-800 shadow-md rounded-lg overflow-hidden">
+      <thead class="bg-blue-600 dark:bg-gray-700 text-white">
         <tr>
-          <th>Amount</th>
-          <th>Who I Paid</th>
-          <th>When</th>
-          <th>Notes</th>
-          <th>Receipt</th>
-          <th>Actions</th>
+          <th class="px-4 py-2">Date</th>
+          <th class="px-4 py-2">Amount</th>
+          <th class="px-4 py-2">Recipient</th>
+          <th class="px-4 py-2">Notes</th>
+          <th class="px-4 py-2">Receipt</th>
+          <th class="px-4 py-2">Action</th>
         </tr>
       </thead>
       <tbody>
-        {% for p in payments %}
-        <tr>
-          <td>₪ {{ '%.2f'|format(p.amount) }}</td>
-          <td>{{ p.recipient }}</td>
-          <td>{{ p.date.strftime('%Y-%m-%d') }}</td>
-          <td>{{ p.notes }}</td>
-          <td>
-            {% if p.receipt %}
-              <a href="{{ url_for('uploaded_file', filename=p.receipt) }}" target="_blank">📎 View</a>
-            {% else %}-{% endif %}
+        {% for payment in payments %}
+        <tr class="border-t hover:bg-gray-100 dark:hover:bg-gray-700">
+          <td class="px-4 py-2">{{ payment.date }}</td>
+          <td class="px-4 py-2">₪ {{ "%.2f"|format(payment.amount) }}</td>
+          <td class="px-4 py-2">{{ payment.recipient }}</td>
+          <td class="px-4 py-2">{{ payment.notes }}</td>
+          <td class="px-4 py-2">
+            {% if payment.receipt %}
+              <a href="{{ url_for('uploaded_file', filename=payment.receipt) }}" target="_blank"
+                 class="text-blue-600 hover:underline">📎 View</a>
+            {% else %}
+              —
+            {% endif %}
           </td>
-          <td>
-            <a class="edit-btn" href="{{ url_for('edit_payment', pid=p.id) }}">✏️ Edit</a>
-            <form action="{{ url_for('delete_payment', pid=p.id) }}" method="post" onsubmit="return confirm('Delete this payment?');">
-              <button class="delete">🗑</button>
-            </form>
+          <td class="px-4 py-2">
+            <a href="{{ url_for('edit', id=payment.id) }}" 
+               class="px-2 py-1 bg-yellow-400 hover:bg-yellow-500 rounded-lg">✏️ Edit</a>
+            <a href="{{ url_for('delete', id=payment.id) }}" 
+               class="px-2 py-1 bg-red-500 hover:bg-red-600 text-white rounded-lg"
+               onclick="return confirm('Delete this payment?')">🗑️ Delete</a>
           </td>
         </tr>
         {% else %}
-        <tr><td colspan="6" class="empty">No payments yet.</td></tr>
+        <tr>
+          <td colspan="6" class="text-center py-4 text-gray-500">No payments yet.</td>
+        </tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
-</section>
+</div>
 
 {% endblock %}

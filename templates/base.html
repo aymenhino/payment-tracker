@@ -1,44 +1,56 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Payment Tracker</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class'
+    }
+  </script>
+
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-<body class="light">
-  <header class="topbar">
-    <div class="topbar-inner">
-      <h1>🚧 Payment Tracker</h1>
-      <div class="topbar-actions">
-        <button id="theme-toggle">🌙 Dark Mode</button>
-        <a href="{{ url_for('logout') }}" class="logout-btn">🚪 Logout</a>
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen flex flex-col">
+
+  <!-- Navbar -->
+  <nav class="bg-gradient-to-r from-blue-600 to-indigo-700 dark:from-gray-800 dark:to-gray-900 shadow-lg">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+      <h1 class="text-2xl font-extrabold text-white tracking-wide">💳 Payment Tracker</h1>
+      <div class="flex gap-3">
+        <a href="/" class="px-3 py-2 text-sm font-medium text-white hover:bg-blue-800 rounded">Home</a>
+        <a href="/login" class="px-3 py-2 text-sm font-medium text-white hover:bg-blue-800 rounded">Login</a>
+        <button id="darkToggle" class="px-3 py-2 text-sm bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg">
+          🌙
+        </button>
       </div>
     </div>
-  </header>
+  </nav>
 
-  <main class="container">
+  <!-- Content -->
+  <main class="flex-grow container mx-auto px-4 py-6">
     {% block content %}{% endblock %}
   </main>
 
-  <footer class="footer">
-    <p>© {{ year }} Personal Finance Tracker</p>
+  <!-- Footer -->
+  <footer class="bg-gray-200 dark:bg-gray-800 py-4 text-center text-gray-600 dark:text-gray-400 text-sm">
+    <p>© {{ now().year }} Payment Tracker — Built with ❤️</p>
   </footer>
 
   <script>
-    const rootBody = document.body;
-    const btn = document.getElementById("theme-toggle");
-    const saved = localStorage.getItem("theme") || "light";
-    rootBody.classList.add(saved);
-    btn.textContent = saved === "dark" ? "☀️ Light Mode" : "🌙 Dark Mode";
-
-    btn.addEventListener("click", () => {
-      const next = rootBody.classList.contains("dark") ? "light" : "dark";
-      rootBody.classList.remove("light","dark");
-      rootBody.classList.add(next);
-      localStorage.setItem("theme", next);
-      btn.textContent = next === "dark" ? "☀️ Light Mode" : "🌙 Dark Mode";
+    const toggle = document.getElementById("darkToggle");
+    toggle.addEventListener("click", () => {
+      document.documentElement.classList.toggle("dark");
+      localStorage.theme = document.documentElement.classList.contains("dark") ? "dark" : "light";
     });
+    if (localStorage.theme === "dark") {
+      document.documentElement.classList.add("dark");
+    }
   </script>
 </body>
 </html>
